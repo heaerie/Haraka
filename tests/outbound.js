@@ -4,8 +4,8 @@ var fs   = require('fs');
 var path = require('path');
 
 var lines = [
-    'From: John Johnson <john@example.com>',
-    'To: Jane Johnson <jane@example.com>',
+    'From: User1 <user1@myroomexpense.com>',
+    'To: Duraimurugan Govindaraj <durai145@live.in>',
     "Subject: What's for dinner?",
     '',
     "I'm hungry.",
@@ -50,10 +50,10 @@ exports.get_tls_options = {
     'gets TLS properties from tls.ini.main': function (test) {
         test.expect(1);
         var tls_config = this.outbound.get_tls_options(
-            { exchange: 'mail.example.com'}
+            { exchange: 'myroomexpense.com'}
         );
         test.deepEqual(tls_config, {
-            servername: 'mail.example.com',
+            servername: 'myroomexpense.com',
             requestCert: true,
             honorCipherOrder: false,
             rejectUnauthorized: false
@@ -68,7 +68,7 @@ exports.get_tls_options = {
         this.outbound.config = this.outbound.config.module_config(path.resolve('tests'));
 
         var tls_config = this.outbound.get_tls_options(
-            { exchange: 'mail.example.com'}
+            { exchange: 'myroomexpense.com'}
         );
 
         test.deepEqual(tls_config, {

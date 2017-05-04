@@ -385,6 +385,7 @@ exports._list_file = function (file, cb) {
         var todo = '';
         td_reader.on('data', function (str) {
             todo += str;
+	console.log("### todo=" + todo);
             if (Buffer.byteLength(todo) === todo_len) {
                 // we read everything
                 var todo_struct = JSON.parse(todo);
@@ -904,11 +905,13 @@ HMailItem.prototype.read_todo = function () {
         // as no filesystem on the planet should be that dumb...
         tl_reader.destroy();
         var todo_len = (buf[0] << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3];
+	console.log("### todo_len=" + todo_len);
         var td_reader = fs.createReadStream(self.path, {encoding: 'utf8', start: 4, end: todo_len + 3});
         self.data_start = todo_len + 4;
         var todo = '';
         td_reader.on('data', function (str) {
             todo += str;
+	console.log("### str=" + str);
             if (Buffer.byteLength(todo) === todo_len) {
                 // we read everything
                 self.todo = JSON.parse(todo);
