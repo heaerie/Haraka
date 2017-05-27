@@ -6,6 +6,7 @@ var os          = require('os');
 var path        = require('path');
 
 // npm libs
+var constants = require('haraka-constants');
 var ipaddr      = require('ipaddr.js');
 var constants   = require('haraka-constants');
 var net_utils   = require('haraka-net-utils');
@@ -13,13 +14,12 @@ var utils       = require('haraka-utils');
 var Address     = require('address-rfc2821').Address;
 
 // Haraka libs
-var config      = require('./config');
-var logger      = require('./logger');
-var trans       = require('./transaction');
-var plugins     = require('./plugins');
-var rfc1869     = require('./rfc1869');
 var outbound    = require('./outbound');
 var ResultStore = require('haraka-results');
+var util = require('util'),
+    async = require("async");
+var fs = require('fs');
+
 
 var hostname    = (os.hostname().split(/\./))[0];
 var version     = JSON.parse(
@@ -31,7 +31,7 @@ var outbound = require('./outbound');
 var plugin = this;
 
 var to = 'durai145@gmail.com';
-var from = 'user1@myroomexpense.com';
+var from = 'jayagopal.govindaraj@myroomexpense.com';
 
 var contents = [
     "From: " + from,
@@ -44,6 +44,8 @@ var contents = [
     ""].join("\n");
     
 var outnext = function (code, msg) {
+	console.log("code : %s, msg: %s", code, msg);
+/*
     switch (code) {
         case DENY:  plugin.logerror("Sending mail failed: " + msg);
                     break;
@@ -53,6 +55,7 @@ var outnext = function (code, msg) {
         default:    plugin.logerror("Unrecognized return code from sending email: " + msg);
                     next();
     }
+*/
 };
 
 outbound.send_email(from, to, contents, outnext);

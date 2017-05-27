@@ -437,6 +437,7 @@ function _fname () {
 
 exports.send_email = function () {
 
+	console.log("###arguments.length : %d", arguments.length);
     if (arguments.length === 2) {
         this.loginfo("Sending email as a transaction");
         return this.send_trans_email(arguments[0], arguments[1]);
@@ -450,18 +451,21 @@ exports.send_email = function () {
 
     var dot_stuffed = ((options && options.dot_stuffed) ? options.dot_stuffed : false);
     var notes = ((options && options.notes) ? options.notes : null);
+    console.log("### from : %s, to: %s, contents: %s, next:%s, options:%s", from, to, contents, next, options );
 
     this.loginfo("Sending email via params");
 
     var transaction = trans.createTransaction();
 
     this.loginfo("Created transaction: " + transaction.uuid);
+    console.log("### created transaction: " + transaction.uuid);
+    console.log("### B001: ", transaction);
 
     //Adding notes passed as parameter
     if (notes) {
         transaction.notes = notes;
     }
-
+    console.log("### B002: " + transaction);
     // set MAIL FROM address, and parse if it's not an Address object
     if (from instanceof Address) {
         transaction.mail_from = from;

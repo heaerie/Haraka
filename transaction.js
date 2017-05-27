@@ -194,3 +194,8 @@ Transaction.prototype.add_body_filter = function (ct_match, filter) {
     this.parse_body = true;
     this.body_filters.push({'ct_match': ct_match, 'filter': filter});
 };
+Transaction.prototype.toString = function () {
+	
+}
+
+
