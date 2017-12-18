@@ -38,47 +38,49 @@ var hook_queue = function (next, connection) {
 	isValidUserRequest[0].outboundMailRequest[0].body.push(prepareBody(transaction.body));
 	this.logdebug("call encryptBodyList A:001");
 	var inpList=JSON.parse(JSON.stringify(isValidUserRequest[0].outboundMailRequest[0].body));	
-	//file.writeJson("/home/ubuntu/bin/" + "test2.json", inpList);
+	file.writeJson("/home/ubuntu/bin/" + "test2.json", inpList);
 	this.logdebug(this.logdebug);
 	this.logdebug("call encryptBodyList A:002");
-	encryptBodyList(inpList, this.logdebug, function (err, logdebug, outList) {
-		logdebug("EBL:001");
+	encryptBodyList(inpList, this.logdebug, function (err, outList) {
+		this.logdebug("EBL:001");
 		if (err) {
-			logdebug("Error" + err);
+			this.logdebug("Error" + err);
 			return next(DENY, "Heaerie Email Denied.");
 		} else  {
-			logdebug("outList = " + JSON.stringify(outList, null, 4));
-			isValidUserRequest[0].outboundMailRequest[0].body=outList;
-			isValidUserRequest[0].outboundMailRequest[0].to = transaction.rcpt_to;
-			isValidUserRequest[0].outboundMailRequest[0].mailFrom = transaction.mail_from;
-			isValidUserRequest[0].outboundMailRequest[0].uuid = transaction.uuid;
-			//TODO:
-			//	transaction.body.header.emailId=H1450002
-			isValidUserRequest[0].outboundMailRequest[0].headers.push(transaction.body.header);
-			isValidUserRequest[0].outboundMailRequest[0].headers_decoded.push(transaction.body.headers_decoded);
-			isValidUserRequest[0].outboundMailRequest[0].header_list.push(transaction.body.header_list);
-			
-			var isValidUserRequestUrl = JSON.stringify(isValidUserRequest);
+			this.logdebug("outList = " + JSON.stringify(outList, null, 4));
+/*
+		isValidUserRequest[0].outboundMailRequest[0].body=outList;
+		isValidUserRequest[0].outboundMailRequest[0].to = transaction.rcpt_to;
+		isValidUserRequest[0].outboundMailRequest[0].mailFrom = transaction.mail_from;
+		isValidUserRequest[0].outboundMailRequest[0].uuid = transaction.uuid;
+		//TODO:
+		//	transaction.body.header.emailId=H1450002
+		isValidUserRequest[0].outboundMailRequest[0].headers.push(transaction.body.header);
+		isValidUserRequest[0].outboundMailRequest[0].headers_decoded.push(transaction.body.headers_decoded);
+		isValidUserRequest[0].outboundMailRequest[0].header_list.push(transaction.body.header_list);
+		
+		var isValidUserRequestUrl = JSON.stringify(isValidUserRequest);
 
-			var body = {"grantType":"password","clientId":"CLIENTSP","scope":"GPA","outboundMailRequest": isValidUserRequestUrl};
-			var respObj= {};
+		var body = {"grantType":"password","clientId":"CLIENTSP","scope":"GPA","outboundMailRequest": isValidUserRequestUrl};
+		var respObj= {};
 
-			var opt = { method: 'POST', 
-			//TODO: hostname should be read from config.json
-					uri: 'http://localhost:5000/service/mail/outboundMail', 
-					form: body,
-					headers: respObj
-			};
+		var opt = { method: 'POST', 
+		//TODO: hostname should be read from config.json
+				uri: 'http://localhost:5000/service/mail/outboundMail', 
+				form: body,
+				headers: respObj
+		};
 
-			store.saveToLocal(JSON.stringify(opt));
-			httpreq.httpRequest(opt, function(err, resp) {
-				if (err) {
-		//		TODO: Need to customize the message by  domain
-					return next(OK, "Heaerie Email Accepted.");
-				}
-		//		TODO: Need to customize the message by  domain
-				return  next(OK, "Heaerie Email Accepted.");
-			});
+		store.saveToLocal(JSON.stringify(opt));
+		httpreq.httpRequest(opt, function(err, resp) {
+			if (err) {
+	//		TODO: Need to customize the message by  domain
+				return next(OK, "Heaerie Email Accepted.");
+			}
+	//		TODO: Need to customize the message by  domain
+			return  next(OK, "Heaerie Email Accepted.");
+		});
+		*/
 		}
 
 	});
@@ -200,7 +202,7 @@ function WaterfallOver(list, logdebug, iterator, callback) {
         // if nextItemIndex equals the number of items in list, then we're done
         if(nextItemIndex === list.length) {
 		logdebug("R099: nextItemIndex" +  nextItemIndex);
-		callback(err, logdebug, outList);
+		callback(err, outList);
 	} else {
             // otherwise, call the iterator on the next item
 		logdebug("R002: nextItemIndex" +  nextItemIndex);
@@ -262,14 +264,13 @@ var encryptBodyList =  function(bodyList, logdebug, fcallback) {
 					return 	callback(err, null);
 				}
 				bodyObj.body_text_encoded = encryptedBodyTextEncoded ;
-				logdebug("in WR:4.002 bodyObj.childern= " + bodyObj.childern);
-				if ((bodyObj.childern != undefined ) &&  (bodyObj.childern.length != 0)) {
-					logdebug("in WR:5.001 call encryptBodyList ");
-					encryptBodyList(bodyObj.childern, logdebug, function(err, childList) {
+				if ((bodyObj.children != undefined ) &&  (bodyObj.children.length != 0)) {
+					logdebug("in WR:5.001 err=" + err + ", encryptedBodytext=" +  encryptedBodytext);
+					encryptBodyList(bodyObj.children, logdebug, function(err, childList) {
 						if(err) {
 							return	callback(err, null);
 						}
-						bodyObj.childern = childList;
+						bodyObj.children = childList;
 						logdebug("in WR:6.001 err=" + err + ", encryptedBodytext=" +  encryptedBodytext);
 						return callback(err, bodyObj);
 					});
@@ -281,15 +282,15 @@ var encryptBodyList =  function(bodyList, logdebug, fcallback) {
 		});
 	
 	}, 
-	function(err, logdebug, outList) {
+	function(err, outList) {
 		logdebug("F001:in encryptBodyList final");
 		logdebug(fcallback)
 		logdebug("F002:in encryptBodyList final" + outList);
-		fcallback(err, logdebug,  outList);
+		fcallback(err, outList);
 	});
 }
 /*
-encryptBodyList([{"bodytext" : "1", "body_text_encoded" : "1" , childern: [ { "bodytext" : "1.1" , "body_text_encoded" : "1.1", childern : [] } ]} , { "bodytext" : "2", "body_text_encoded" : "2", childern:[]}],  keys.pubkey, this.loginfo, function (err, outList) {
+encryptBodyList([{"bodytext" : "1", "body_text_encoded" : "1" , children: [ { "bodytext" : "1.1" , "body_text_encoded" : "1.1", children : [] } ]} , { "bodytext" : "2", "body_text_encoded" : "2", children:[]}],  keys.pubkey, this.loginfo, function (err, outList) {
 		if (err) {
 			this.loginfo("Error " + err);
 		} else  {
@@ -308,23 +309,8 @@ this.loginfo(this);
 hook_queue(function() {
 		this.loginfo("next called");
 	}, { transaction: {
-		body : [{"bodytext" : "1", "body_text_encoded" : "1" , childern: [ { "bodytext" : "1.1" , "body_text_encoded" : "1.1", childern : [] } ]}]
+		body : [{"bodytext" : "1", "body_text_encoded" : "1" , children: [ { "bodytext" : "1.1" , "body_text_encoded" : "1.1", children : [] } ]}]
 		}} );
 */
-	var inpList = require("/home/ubuntu/bin/" + "test2.json");
-	this.logdebug=console.log;
-        this.logdebug(this.logdebug);
-        this.logdebug("call encryptBodyList A:002");
-	
-        encryptBodyList(inpList, this.logdebug, function(err, logdebug, outList) {
-		logdebug("FNL:001 on final");
-                if (err) {
-                        logdebug("Error" + err);
-                        return next(DENY, "Heaerie Email Denied.");
-                } else  {
-                        logdebug("outList = " + JSON.stringify(outList, null, 4));
-		}
-	}
-	);
 exports.hook_queue = hook_queue;
 exports.encryptBodyList=encryptBodyList;

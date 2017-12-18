@@ -17,7 +17,7 @@ httpRequest = function(options, callback) {
 	});
 
 }
-
+/*
 var isValidUserRequest =[{"isValidUserRequest":[{"userDetails":[{"emailId":"H1450002"}], "portalDetails":[{"portalKey":"Member Portal"}]}]}];
 
 var body = {"grantType":"password","clientId":"CLIENTSP","scope":"GPA","isValidUserRequest":"[{\"isValidUserRequest\":[{\"userDetails\":[{\"emailId\":\"H1450003\"}], \"portalDetails\":[{\"portalKey\":\"Member Portal\"}]}]}];"}
@@ -45,5 +45,5 @@ if (err) {
 console.log(resp);
 return;
 });
-
+*/
 exports.httpRequest=httpRequest;

@@ -267,6 +267,7 @@ Plugin.prototype._compile = function () {
 };
 
 function get_timeout (name) {
+	logger.logdebug(name + '.timeout');
     var timeout = parseFloat((config.get(name + '.timeout')));
     if (isNaN(timeout)) {
         logger.logdebug('no timeout in ' + name + '.timeout');
@@ -486,7 +487,7 @@ plugins.run_next_hook = function (hook, object, params) {
         timeout_id = setTimeout(function () {
             timed_out = true;
             object.logcrit('Plugin ' + item[0].name + ' timed out on hook ' +
-                    hook + ' - make sure it calls the callback');
+                    hook + ' - make sure it calls the callback [timeout=' + item[0].timeout +"]");
             callback(constants.denysoft, 'plugin timeout');
         }, item[0].timeout * 1000);
     }

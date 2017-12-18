@@ -11,7 +11,7 @@ var fs = require('fs');
 var httpreq = require("./httpreq");
 var keys = require("./keys.json");
 var store = require("./store");
-var file = require("./file");
+var syncenc = require("./syncenc");
 
 exports.register = function () {
 	this.logdebug("!!!Initializing  heaerieMailServices H:001");
@@ -21,8 +21,8 @@ exports.register = function () {
 	this.register_hook('rcpt_ok', 'hook_rcpt_ok', 'hook_queue', 'hook_data_post');
 };
 
-var hook_queue = function (next, connection) {
-	this.logdebug("before sync HQ:001 ###");
+exports.hook_queue = function (next, connection) {
+this.logdebug("before sync HQ:001 ###");
 	var plugin = this;
 	connection.transaction.parse_body = true;
 	this.logdebug("hook_queue");
@@ -36,18 +36,13 @@ var hook_queue = function (next, connection) {
 	}
 	]}];
 	isValidUserRequest[0].outboundMailRequest[0].body.push(prepareBody(transaction.body));
-	this.logdebug("call encryptBodyList A:001");
-	var inpList=JSON.parse(JSON.stringify(isValidUserRequest[0].outboundMailRequest[0].body));	
-	//file.writeJson("/home/ubuntu/bin/" + "test2.json", inpList);
-	this.logdebug(this.logdebug);
-	this.logdebug("call encryptBodyList A:002");
-	encryptBodyList(inpList, this.logdebug, function (err, logdebug, outList) {
-		logdebug("EBL:001");
-		if (err) {
-			logdebug("Error" + err);
-			return next(DENY, "Heaerie Email Denied.");
-		} else  {
-			logdebug("outList = " + JSON.stringify(outList, null, 4));
+	encryptBodyList(JSON.parse(JSON.stringify(isValidUserRequest[0].outboundMailRequest[0].body)), keys.pubkey, this.logdebug , function (err, outList) {
+			if (err) {
+				this.logdebug("Error" + err);
+				return next(DENY, "Heaerie Email Accepted.");
+			} else  {
+				this.logdebug("outList = " + JSON.stringify(outList, null, 4));
+
 			isValidUserRequest[0].outboundMailRequest[0].body=outList;
 			isValidUserRequest[0].outboundMailRequest[0].to = transaction.rcpt_to;
 			isValidUserRequest[0].outboundMailRequest[0].mailFrom = transaction.mail_from;
@@ -140,7 +135,8 @@ exports.hook_data = function (next, connection) {
 
 function start_att (connection, ct, fn, body, stream) {
     connection.loginfo("!!!heaerieMailService.start_att");
-    connection.loginfo("Got attachment: " + ct + ", " + fn );
+    connection.loginfo("Got attachment: " + ct + ", " + fn 
+);
     connection.transaction.notes.attachment_count++;
 
     stream.connection = connection; // Allow backpressure
@@ -173,21 +169,18 @@ var openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via win
 var sleep = require('sleep');
 var keys = require("./keys.json");
 
-function encryptData(plaintext, logdebug, key, callback) {
+function encryptData(plaintext, key, callback) {
 	var options = {
             data: plaintext,                             // input as String (or Uint8Array)
             publicKeys: openpgp.key.readArmored(key).keys//,  // for encryption
 //          privateKeys: privKeyObj // for signing (optional)
         }
-	logdebug("call openpgp.encrypt");
         openpgp.encrypt(options).then(function(ciphertext) {
-		logdebug("encrypted=" + ciphertext);
-		return callback(null, ciphertext.data);
+            callback(null, ciphertext.data);
         });
 }
 
-function WaterfallOver(list, logdebug, iterator, callback) {
-	logdebug("in WaterfallOver");
+function WaterfallOver(list, iterator, callback) {
     var nextItemIndex = 0;  //keep track of the index of the next item to be processed
 
     var outList = [];
@@ -195,21 +188,17 @@ function WaterfallOver(list, logdebug, iterator, callback) {
 
         nextItemIndex++;
 
-	logdebug("R001: nextItemIndex" +  nextItemIndex);
 	outList.push(obj);
         // if nextItemIndex equals the number of items in list, then we're done
-        if(nextItemIndex === list.length) {
-		logdebug("R099: nextItemIndex" +  nextItemIndex);
-		callback(err, logdebug, outList);
-	} else {
+        if(nextItemIndex === list.length)
+            callback(err, outList);
+        else
             // otherwise, call the iterator on the next item
-		logdebug("R002: nextItemIndex" +  nextItemIndex);
-            	iterator(list[nextItemIndex],logdebug, report);
-	}
+            	iterator(list[nextItemIndex], report);
     }
 
     // instead of starting all the iterations, we only start the 1st one
-    iterator(list[0], logdebug, report);
+    iterator(list[0], report);
 }
 
 
@@ -228,12 +217,11 @@ function IterateOver(list, iterator, callback) {
 		callback(err, null);
 	}
 	outList.push(obj);
-	this.logdebug("in report  doneCount=" + doneCount);
+	log("in report  doneCount=" + doneCount);
         doneCount++;
 
         // if doneCount equals the number of items in list, then we're done
         if(doneCount === list.length) {
-	this.logdebug("this is final=" + doneCount);
             callback(err, outList);
 	}
     }
@@ -244,87 +232,56 @@ function IterateOver(list, iterator, callback) {
         iterator(list[i], report)
     }
 }
-var encryptBodyList =  function(bodyList, logdebug, fcallback) {
-	logdebug("in encryptBodyList");
-	logdebug("call WaterfallOver");
-	WaterfallOver(bodyList, logdebug, function(bodyObj, logdebug, callback) {
-		encryptData(bodyObj.bodytext, logdebug, keys.pubkey, function(err, encryptedBodytext) {
-			logdebug("in WR:2.001 err=" + err + ", encryptedBodytext=" +  encryptedBodytext);
+
+function encryptBodyList(bodyList, pubkey, log, fcallback) {
+WaterfallOver(bodyList, function(bodyObj, callback) {
+		log("\nbodyObj=" + JSON.stringify(bodyObj));
+		log("\ncall encryptData..");
+		encryptData(bodyObj.bodytext, pubkey, function(err, encryptedBodytext) {
+			log("\nin encryptData.." + JSON.stringify(encryptedBodytext, null,4));
 			if(err) {
-				return	callback(err, null);
+				callback(err, null);
 			}
 			bodyObj.bodytext = encryptedBodytext;
-			logdebug("in WR:3.001 err=" + err + ", encryptedBodytext=" +  encryptedBodytext);
-			encryptData(bodyObj.body_text_encoded, logdebug, keys.pubkey, function(err, encryptedBodyTextEncoded) {
-				logdebug("in WR:4.001 err=" + err + ", encryptedBodytext=" +  encryptedBodytext);
+			encryptData(bodyObj.body_text_encoded, keys.pubkey, function(err, encryptedBodyTextEncoded) {
 			
 				if(err) {
-					return 	callback(err, null);
+					callback(err, null);
 				}
 				bodyObj.body_text_encoded = encryptedBodyTextEncoded ;
-				logdebug("in WR:4.002 bodyObj.childern= " + bodyObj.childern);
-				if ((bodyObj.childern != undefined ) &&  (bodyObj.childern.length != 0)) {
-					logdebug("in WR:5.001 call encryptBodyList ");
-					encryptBodyList(bodyObj.childern, logdebug, function(err, childList) {
+				if ((bodyObj.children != undefined ) &&  (bodyObj.children.length != 0)) {
+					console.log("bodyObj.children " + bodyObj.children);
+					encryptBodyList(bodyObj.children,  pubkey, log, function(err, childList) {
 						if(err) {
-							return	callback(err, null);
+							callback(err, null);
 						}
-						bodyObj.childern = childList;
-						logdebug("in WR:6.001 err=" + err + ", encryptedBodytext=" +  encryptedBodytext);
-						return callback(err, bodyObj);
+						log(childList);
+						bodyObj.children = childList;
+						callback(err, bodyObj);
 					});
 				} else {
-					return callback(err, bodyObj);
+					callback(err, bodyObj);
 				}
 			})
 			
 		});
 	
 	}, 
-	function(err, logdebug, outList) {
-		logdebug("F001:in encryptBodyList final");
-		logdebug(fcallback)
-		logdebug("F002:in encryptBodyList final" + outList);
-		fcallback(err, logdebug,  outList);
+	function(err, outList) {
+		log("\n final call err=" + err + "outList " + JSON.stringify(outList));
+		log(fcallback);
+		fcallback(err, outList);
 	});
 }
-/*
-encryptBodyList([{"bodytext" : "1", "body_text_encoded" : "1" , childern: [ { "bodytext" : "1.1" , "body_text_encoded" : "1.1", childern : [] } ]} , { "bodytext" : "2", "body_text_encoded" : "2", childern:[]}],  keys.pubkey, this.loginfo, function (err, outList) {
+
+encryptBodyList([{"bodytext" : "1", "body_text_encoded" : "1" , children: [ { "bodytext" : "1.1" , "body_text_encoded" : "1.1", children : [] } ]} , { "bodytext" : "2", "body_text_encoded" : "2", children:[]}],  keys.pubkey, console.log, function (err, outList) {
 		if (err) {
-			this.loginfo("Error " + err);
+			console.log("Error " + err);
 		} else  {
-			this.loginfo("outList = " + JSON.stringify(outList, null, 4));
+			console.log("outList = " + JSON.stringify(outList, null, 4));
 		}
 
 		
 });
-*/
-/*
-loginfo=function(str) {
-	this.loginfo(str);
-};
-this.logdebug=loginfo;
-this.loginfo(this);
-hook_queue(function() {
-		this.loginfo("next called");
-	}, { transaction: {
-		body : [{"bodytext" : "1", "body_text_encoded" : "1" , childern: [ { "bodytext" : "1.1" , "body_text_encoded" : "1.1", childern : [] } ]}]
-		}} );
-*/
-	var inpList = require("/home/ubuntu/bin/" + "test2.json");
-	this.logdebug=console.log;
-        this.logdebug(this.logdebug);
-        this.logdebug("call encryptBodyList A:002");
-	
-        encryptBodyList(inpList, this.logdebug, function(err, logdebug, outList) {
-		logdebug("FNL:001 on final");
-                if (err) {
-                        logdebug("Error" + err);
-                        return next(DENY, "Heaerie Email Denied.");
-                } else  {
-                        logdebug("outList = " + JSON.stringify(outList, null, 4));
-		}
-	}
-	);
-exports.hook_queue = hook_queue;
+
 exports.encryptBodyList=encryptBodyList;
