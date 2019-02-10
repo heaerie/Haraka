@@ -18,13 +18,13 @@ httpRequest = function(options, callback) {
 
 }
 
-var isValidUserRequest =[{"outboundMailRequest":[
+var isValidUserRequest ={"outboundMailRequest":
 {
-	"headers":[{"emailId":"H1450002"}]
-	,"headers_decoded":[{"emailId":"H1450002"}]
-	,"header_list":[{"emailId":"H1450002"}]
+	"headers":{"emailId":"H1450002"}
+	,"headers_decoded":{"emailId":"H1450002"}
+	,"header_list":{"emailId":"H1450002"}
 }
-]}];
+};
 
 isValidUserRequestUrl = JSON.stringify(isValidUserRequest);
 

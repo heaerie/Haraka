@@ -15,9 +15,6 @@ var file = require("./file");
 
 exports.register = function () {
 	this.logdebug("!!!Initializing  heaerieMailServices H:001");
-	var config = this.config.get("heaerieMailServices.json");
-	this.logdebug(config);
-	this.logdebug("Config loaded : "+util.inspect(config));
 	this.register_hook('rcpt_ok', 'hook_rcpt_ok', 'hook_queue', 'hook_data_post');
 };
 
@@ -28,16 +25,15 @@ var hook_queue = function (next, connection) {
 	this.logdebug("hook_queue");
 	var transaction = connection.transaction;
 	var emailTo = transaction.rcpt_to;
-	var isValidUserRequest =[{"outboundMailRequest":[{
-			"headers":[{"emailId":"H1450002"}]
-			,"headers_decoded":[{"emailId":"H1450002"}]
-			,"header_list":[{"emailId":"H1450002"}]
+	var isValidUserRequest ={"outboundMailRequest":{
+			"headers":{"emailId":"H1450002"}
+			,"headers_decoded":{"emailId":"H1450002"}
+			,"header_list":{"emailId":"H1450002"}
 			,"body": []
-	}
-	]}];
-	isValidUserRequest[0].outboundMailRequest[0].body.push(prepareBody(transaction.body));
+	}};
+	isValidUserRequest.outboundMailRequest.body.push(prepareBody(transaction.body));
 	this.logdebug("call encryptBodyList A:001");
-	var inpList=JSON.parse(JSON.stringify(isValidUserRequest[0].outboundMailRequest[0].body));	
+	var inpList=JSON.parse(JSON.stringify(isValidUserRequest.outboundMailRequest.body));	
 	//file.writeJson("/home/ubuntu/bin/" + "test2.json", inpList);
 	this.logdebug(this.logdebug);
 	this.logdebug("call encryptBodyList A:002");
@@ -48,19 +44,19 @@ var hook_queue = function (next, connection) {
 			return next(DENY, "Heaerie Email Denied.");
 		} else  {
 			logdebug("outList = " + JSON.stringify(outList, null, 4));
-			isValidUserRequest[0].outboundMailRequest[0].body=outList;
-			isValidUserRequest[0].outboundMailRequest[0].to = transaction.rcpt_to;
-			isValidUserRequest[0].outboundMailRequest[0].mailFrom = transaction.mail_from;
-			isValidUserRequest[0].outboundMailRequest[0].uuid = transaction.uuid;
+			isValidUserRequest.outboundMailRequest.body=outList;
+			isValidUserRequest.outboundMailRequest.to = transaction.rcpt_to;
+			isValidUserRequest.outboundMailRequest.mailFrom = transaction.mail_from;
+			isValidUserRequest.outboundMailRequest.uuid = transaction.uuid;
 			//TODO:
 			//	transaction.body.header.emailId=H1450002
-			isValidUserRequest[0].outboundMailRequest[0].headers.push(transaction.body.header);
-			isValidUserRequest[0].outboundMailRequest[0].headers_decoded.push(transaction.body.headers_decoded);
-			isValidUserRequest[0].outboundMailRequest[0].header_list.push(transaction.body.header_list);
+			isValidUserRequest.outboundMailRequest.headers.push(transaction.body.header);
+			isValidUserRequest.outboundMailRequest.headers_decoded.push(transaction.body.headers_decoded);
+			isValidUserRequest.outboundMailRequest.header_list.push(transaction.body.header_list);
 			
 			var isValidUserRequestUrl = JSON.stringify(isValidUserRequest);
 
-			var body = {"grantType":"password","clientId":"CLIENTSP","scope":"GPA","outboundMailRequest": isValidUserRequestUrl};
+			var body = {"grantType":"password","clientId":"CLIENTSP","scope":"GPA","outboundMailRequest": isValidUserRequest};
 			var respObj= {};
 
 			var opt = { method: 'POST', 
@@ -97,7 +93,30 @@ exports.hook_rcpt_ok = function (next, connections, params) {
 		}
 	});
 };
-
+/**
+ * heaerie V2 changes , schema definition is changed.
+ * 
+ * */
+exports.is_user_valid = function (user, callback) {
+        var plugin = this;
+        var plugin = this;
+        var isValidUserRequest ={"isValidUserRequest":{"userDetails":{"emailId": user}, "portalDetails":{"portalKey":"Member Portal"}}};
+        var body = {"grantType":"password","clientId":"CLIENTSP","scope":"GPA","isValidUserRequest": isValidUserRequest }
+        var respObj= {};
+        var opt = {
+                                method: 'POST',
+                                uri: 'http://localhost:5000/service/userDetails/isValidUser',
+                                form: body,
+                                headers: respObj
+                        };
+        httpreq.httpRequest(opt, function(err, resp) {
+                if (err) {
+                        return  callback(false);
+                }
+                return  callback(true);
+        });
+};
+/*
 exports.is_user_valid = function (user, callback) {
 	var plugin = this;
 	var plugin = this;
@@ -119,6 +138,7 @@ exports.is_user_valid = function (user, callback) {
 	});
 
 };
+*/
 
 exports.hook_data_post = function (next, connection) {
     this.loginfo("!!!heaerieMailService.hook_data_post");
@@ -311,6 +331,7 @@ hook_queue(function() {
 		body : [{"bodytext" : "1", "body_text_encoded" : "1" , childern: [ { "bodytext" : "1.1" , "body_text_encoded" : "1.1", childern : [] } ]}]
 		}} );
 */
+/*
 	var inpList = require("/home/ubuntu/bin/" + "test2.json");
 	this.logdebug=console.log;
         this.logdebug(this.logdebug);
@@ -326,5 +347,6 @@ hook_queue(function() {
 		}
 	}
 	);
+	*/
 exports.hook_queue = hook_queue;
 exports.encryptBodyList=encryptBodyList;
