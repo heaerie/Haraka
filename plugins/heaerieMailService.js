@@ -34,7 +34,6 @@ var hook_queue = function (next, connection) {
 	isValidUserRequest.outboundMailRequest.body.push(prepareBody(transaction.body));
 	this.logdebug("call encryptBodyList A:001");
 	var inpList=JSON.parse(JSON.stringify(isValidUserRequest.outboundMailRequest.body));	
-	//file.writeJson("/home/ubuntu/bin/" + "test2.json", inpList);
 	this.logdebug(this.logdebug);
 	this.logdebug("call encryptBodyList A:002");
 	encryptBodyList(inpList, this.logdebug, function (err, logdebug, outList) {
@@ -43,16 +42,23 @@ var hook_queue = function (next, connection) {
 			logdebug("Error" + err);
 			return next(DENY, "Heaerie Email Denied.");
 		} else  {
-			logdebug("outList = " + JSON.stringify(outList, null, 4));
+			logdebug("EBL:S:001");
 			isValidUserRequest.outboundMailRequest.body=outList;
+			logdebug("EBL:S:001.001");
 			isValidUserRequest.outboundMailRequest.to = transaction.rcpt_to;
+			logdebug("EBL:S:001.002");
 			isValidUserRequest.outboundMailRequest.mailFrom = transaction.mail_from;
+			logdebug("EBL:S:001.003");
 			isValidUserRequest.outboundMailRequest.uuid = transaction.uuid;
+			logdebug("EBL:S:001.004");
 			//TODO:
 			//	transaction.body.header.emailId=H1450002
-			isValidUserRequest.outboundMailRequest.headers.push(transaction.body.header);
-			isValidUserRequest.outboundMailRequest.headers_decoded.push(transaction.body.headers_decoded);
-			isValidUserRequest.outboundMailRequest.header_list.push(transaction.body.header_list);
+			// isValidUserRequest.outboundMailRequest.headers.push(transaction.body.header);
+			// logdebug("EBL:S:001.005");
+			// isValidUserRequest.outboundMailRequest.headers_decoded.push(transaction.body.headers_decoded);
+			// logdebug("EBL:S:001.006");
+			// isValidUserRequest.outboundMailRequest.header_list.push(transaction.body.header_list);
+			logdebug("EBL:S:001.007");
 			
 			var isValidUserRequestUrl = JSON.stringify(isValidUserRequest);
 
@@ -65,13 +71,19 @@ var hook_queue = function (next, connection) {
 					form: body,
 					headers: respObj
 			};
-
+			file.writeJson("/home/ubuntu/bin/" + "request.json", JSON.stringify(opt));
+			logdebug("EBL:S:001.008" + JSON.stringify(opt));
+			
+			logdebug("EBL:S:002");
 			store.saveToLocal(JSON.stringify(opt));
 			httpreq.httpRequest(opt, function(err, resp) {
+			logdebug("HR:S:003");
 				if (err) {
+			logdebug("HR:S:004");
 		//		TODO: Need to customize the message by  domain
 					return next(OK, "Heaerie Email Accepted.");
 				}
+				logdebug("HR:S:004");
 		//		TODO: Need to customize the message by  domain
 				return  next(OK, "Heaerie Email Accepted.");
 			});
